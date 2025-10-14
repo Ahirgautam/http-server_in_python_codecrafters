@@ -12,14 +12,22 @@ def main():
     while True:
         
         conn, addr = server_socket.accept()
-        print("Received connection ", addr)
+        #print("Received connection ", addr)
 
         data = conn.recv(1024).decode("utf-8")
-        print("Request received : ")
-        print(data)
+        first_line = data.split("\r\n")[0]
 
-        response = ("HTTP/1.1 200 OK\r\n\r\n")
-        conn.sendall(response.encode())
+        method, path, _ = first_line.split(" ")
+        print("Path :")
+        print(path)
+
+        if(path == "/"):
+            res = "HTTP/1.1 200 OK\r\n\r\n"
+        else:
+            res = "HTTP/1.1 404 Not Found\r\n\r\n"
+        
+        
+        conn.sendall(res.encode())
         conn.close()
 
 if __name__ == "__main__":
