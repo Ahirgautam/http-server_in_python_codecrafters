@@ -18,7 +18,7 @@ def main():
         print("Request received : ")
         print(data)
 
-        response = ("HTTP/1.1 200 OK \r\n")
+        response = ("HTTP/1.1 200 OK \r\n\r\n")
         conn.sendall(response.encode())
         conn.close()
 
