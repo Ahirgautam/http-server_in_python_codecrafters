@@ -6,7 +6,7 @@ def main():
     print("Logs from your program will appear here!")
 
     
-    server_socket = socket.create_server(("localhost", 5000))
+    server_socket = socket.create_server(("localhost", 4221))
     print("listening to port 5000")
 
     while True:
