@@ -4,16 +4,17 @@ import sys
 import os
 import gzip
 
-def build_response(status_code, status_message, content_type = None, content = None, is_connection_keep_alive = True, is_byte_content = False,content_encoding="None"):
+def build_response(status_code, status_message, content_type = None, content = None, is_connection_keep_alive = True, is_byte_content = False,content_encoding=None):
     if(content):
         res = (
             f"HTTP/1.1 {status_code} {status_message}\r\n"
-            f"Content-Encoding: {content_encoding}\r\n"
+            f"{f'Content-Encoding: {content_encoding}\r\n' if content_encoding else ''}"
             f"Content-Type: {content_type}\r\n"
             f"Content-Length: {len(content)}\r\n"
             f"Connection: {"keep-alive" if is_connection_keep_alive else "close"}\r\n"
             "\r\n"
         )
+        
         if(not is_byte_content):
             res += f"{content}"
         return res
@@ -100,9 +101,12 @@ def do_get(conn, data, path, headers):
             
         elif(path.startswith("/echo")):
             body = path.split("/")[2]
-            if(headers.get("accept-encoding", "") == "gzip"):
+            encoding_formates = list(map(lambda s: s.strip(), headers.get("accept-encoding", "").split(",")))
+
+            if(encoding_formates.count("gzip") > 0):
                 compressed_body = gzip.compress(body.encode("utf-8"))
                 
+
                 res = build_response(status_code=200,status_message="OK", content_type="text/plain", content=compressed_body,is_byte_content=True,is_connection_keep_alive=is_request_persistent, content_encoding="gzip")
                 conn.sendall(res.encode()+compressed_body)
                 is_reponse_sent = True
