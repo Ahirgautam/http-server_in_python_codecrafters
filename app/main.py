@@ -4,6 +4,8 @@ import sys
 import os
 import gzip
 
+
+
 def build_response(status_code, status_message, content_type = None, content = None, is_connection_keep_alive = True, is_byte_content = False,content_encoding=None):
     if(content):
         res = (
@@ -87,8 +89,6 @@ def do_post(conn, data, path,headers):
     if(not is_reponse_sent):
         conn.sendall(res.encode())
     
-
-
 def do_get(conn, data, path, headers):
     try:
             
@@ -162,9 +162,7 @@ def main():
                 thread.start()
             except TimeoutError:
                 pass
-            except KeyboardInterrupt as e:
-                print("Error: " ,e)
-                server_socket.close()
+            
                 
     except KeyboardInterrupt:
         print("Closing server")
