@@ -1,37 +1,84 @@
-[![progress-banner](https://backend.codecrafters.io/progress/http-server/d2765e01-0191-413c-a1a7-fc12d90336e6)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
+# codecrafters-http-server-python — Simple HTTP server
 
-This is a starting point for Python solutions to the
-["Build Your Own HTTP server" Challenge](https://app.codecrafters.io/courses/http-server/overview).
+Small educational HTTP server implemented in `app/main.py`. Use for learning HTTP basics and simple file operations.
 
-[HTTP](https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol) is the
-protocol that powers the web. In this challenge, you'll build a HTTP/1.1 server
-that is capable of serving multiple clients.
+## Features (complete)
+- Server configuration
+  - Default host: `localhost`, port: `4221`
+  - Stores files under a directory (default `tmp` or passed via CLI)
+  - Basic request size limit (`self.max_request_size`) and socket timeout (`self.time_out`)
 
-Along the way you'll learn about TCP servers,
-[HTTP request syntax](https://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html),
-and more.
+- Logging
+  - Logs to console (stdout) and to `server.log` (append)
+  - Uses Python `logging` for informational and error messages
 
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
+- Connection handling
+  - Persistent (keep-alive) connections by default
+  - If you do NOT want a persistent connection, include the header `Connection: close` in your request
+  - Thread-per-connection handling (can be refactored to a thread pool)
 
-# Passing the first stage
+- Supported endpoints
+  - GET /
+    - Responds with 200 OK (no body)
+  - GET /echo/<text>
+    - Echoes the provided text in the path
+    - If the client sends `Accept-Encoding: gzip`, the server may send a gzipped response with `Content-Encoding: gzip`
+  - GET /user-agent
+    - Returns the value of the `User-Agent` request header as plain text
+  - GET /files/<name>
+    - Returns the requested file from the server directory (binary safe)
+    - Uses guessed MIME type or `application/octet-stream`
+    - Returns 404 if file not found
+  - POST /files/<name>
+    - Creates/overwrites a file with the request body under the server directory
+    - Uses `Content-Length` to read body; returns 201 Created on success
+    - Returns 400/403/500 for bad requests, forbidden paths, or server errors
 
-The entry point for your HTTP server implementation is in `app/main.py`. Study
-and uncomment the relevant code, and push your changes to pass the first stage:
+- Safety & validation
+  - Path validation to reduce directory traversal risk (`validate_path`)
+  - Basic header parsing and checks for `Connection`, `Content-Length`, `Accept-Encoding`, etc.
 
-```sh
-git commit -am "pass 1st stage" # any msg
-git push origin master
-```
+## Usage (Windows)
+From project root:
+- Default directory (`tmp`):
+  python app\main.py
 
-Time to move on to the next stage!
+- Custom directory (current code reads `sys.argv[2]`):
+  python app\main.py ignore my_files_dir
 
-# Stage 2 & beyond
+If the port is already in use (OSError 10048), stop the other process or choose a different port.
 
-Note: This section is for stages 2 and beyond.
+## Request examples (curl)
 
-1. Ensure you have `python (3.13)` installed locally
-1. Run `./your_program.sh` to run your program, which is implemented in
-   `app/main.py`.
-1. Commit your changes and run `git push origin master` to submit your solution
-   to CodeCrafters. Test output will be streamed to your terminal.
+- GET root:
+  curl -v http://localhost:4221/
+
+- Echo (plain):
+  curl -v http://localhost:4221/echo/hello%20world
+
+- Echo (gzip accepted):
+  curl -v -H "Accept-Encoding: gzip" http://localhost:4221/echo/hello
+
+- User-Agent:
+  curl -v http://localhost:4221/user-agent
+
+- Upload file (POST):
+  curl -v --data-binary @localfile.txt http://localhost:4221/files/remote.txt
+
+- Download file:
+  curl -v http://localhost:4221/files/remote.txt -o out.txt
+
+- Force connection close (no persistent connection):
+  curl -v -H "Connection: close" http://localhost:4221/
+
+
+
+## Troubleshooting
+- Port in use (Windows):
+  netstat -ano | findstr :4221
+  taskkill /PID <pid> /F
+
+- Check `server.log` and console output for runtime errors.
+
+## License
+Example/learning code — adapt and harden before production use.

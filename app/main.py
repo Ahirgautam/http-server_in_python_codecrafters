@@ -68,14 +68,12 @@ class HTTPServer():
             request_parts = data.split("\r\n\r\n", 1)
             request_data = request_parts[1] if len(request_parts) > 1  else ""
             
-            res = ""
-            is_reponse_sent = False
-            
             is_request_persistent = not (headers.get("connection", "").lower() == "close")
-            res = self.build_response(status_code=404, status_message="Not Found", is_connection_keep_alive=is_request_persistent)
             
             if(path.startswith("/files")):
-
+                dir = os.path.join(os.path.dirname(__file__), "files")
+                if not os.path.exists(dir):
+                    os.makedirs(dir)
                 path_parts = path.split("/", 2)
                 if(len(path_parts) < 3 or not path_parts[2]):
                     res = self.build_response(status_code=400, status_message="Bad Request", is_connection_keep_alive=is_request_persistent)
@@ -83,23 +81,27 @@ class HTTPServer():
                     return
                 
                 file_name = path_parts[2]
-                
-
-                
-                
-                
-                file_path =  os.path.join("files", file_name)
+            
+                file_path =  os.path.join(dir, file_name)
                 if(not os.path.isfile(file_path)):
                     try:
                         with open(file_path, "w") as file:
                             file.write(request_data)
                         res = self.build_response(status_code=201, status_message="Created", is_connection_keep_alive=is_request_persistent)
+                        conn.sendall(res.encode())
+                        return
                     except:
                         logging.error("Error writing file:", exc_info=True)
                         res = self.build_response(status_code=500, status_message="Internal Server Error", is_connection_keep_alive=is_request_persistent)
-                    
-            if(not is_reponse_sent):
-                conn.sendall(res.encode())
+                        conn.sendall(res.encode())
+                        return
+                else:
+                    res = self.build_response(status_code=409, status_message="Conflict", is_connection_keep_alive=is_request_persistent)
+                    conn.sendall(res.encode())
+                    return  
+            
+            res = self.build_response(status_code=404, status_message="Not Found", is_connection_keep_alive=is_request_persistent)
+            conn.sendall(res.encode())
         except Exception as e:
             logging.error("Error in do_post:", exc_info=e)
             try:
